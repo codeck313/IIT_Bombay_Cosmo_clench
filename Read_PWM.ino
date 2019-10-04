@@ -11,7 +11,7 @@ int armExtention = 0;
 int gapper = 0;
 float differential = 0;
 int speed_turn = 0;
-
+bool throttleDirection = true;
 //Pin map
 int ePinL = 0; //PWM
 int ePinR = 0; //PWM
@@ -117,12 +117,49 @@ int zeroError(int reading)
     }
     return readingtoSend;
 }
-
-//Amount -> Value between 0-255 | Direction -> 1 for right and 0 for left
-//Bias -> Percentage reading of amount by which other motor function
-void steer(int amount, int direction, float bias)
+//Function to control direction of movement
+// Direction -> true for forward and false for back
+void pedal(bool direction)
 {
+    if (direction)
+    {
+        digitalWrite(motorPinL2, HIGH);
+        digitalWrite(motorPinL1, LOW);
+        digitalWrite(motorPinR2, HIGH);
+        digitalWrite(motorPinR1, LOW);
+    }
+    else
+    {
+        digitalWrite(motorPinL1, HIGH);
+        digitalWrite(motorPinL2, LOW);
+        digitalWrite(motorPinR1, HIGH);
+        digitalWrite(motorPinR2, LOW);
+    }
 }
+//Function to control the steer of the car
+//Amount -> Value between 0-255 | steerDirection -> true for right and false for left
+//Bias -> Percentage reading of amount by which other motor function
+//moveDirection -> true if moving forward "turn" and for back turn "false"
+void steer(int amount, bool steerDirection, float bias, bool moveDirection)
+{
+    if (steerDirection)
+    {
+        pedal(moveDirection);
+        analogWrite(ePinL, amount);
+        analogWrite(ePinR, (bias * amount));
+        //Serial.println("ePinR "+String(bias*direction))
+        // Serial.println("ePinL " + String(direction))
+    }
+    else
+    {
+        pedal(moveDirection);
+        analogWrite(ePinR, amount);
+        analogWrite(ePinL, (bias * amount));
+        //Serial.println("ePinR "+String(bias*direction))
+        // Serial.println("ePinL " + String(direction))
+    }
+}
+
 void loop()
 {
     // Serial.flush(); //Check for outgoing signal
@@ -154,24 +191,34 @@ void loop()
     speed_turn = map(uSec[dict_channel[5]], 1000, 2010, 10, 255);
 
     //FROM HERE Platform Code***************************************************
-    if ((throttle < 0) && steering == 0)
+    if (throttle < 0)
     {
+        throttleDirection = false;
         //reverse
-        analogWrite(ePinR, abs(throttle));
-        analogWrite(ePinL, abs(throttle));
+        if (steering == 0)
+        {
+            pedal(false);
+            analogWrite(ePinR, abs(throttle));
+            analogWrite(ePinL, abs(throttle));
+        }
     }
-    else
+    else if (throttle > 0)
     {
+        throttleDirection = true;
         //forward
-        analogWrite(ePinR, throttle);
-        analogWrite(ePinL, throttle);
+        if (steering == 0)
+        {
+            pedal(true);
+            analogWrite(ePinR, throttle);
+            analogWrite(ePinL, throttle);
+        }
     }
     if (steering < 0)
     {
-        steer(speed_turn, 0, differential); //LEFT
+        steer(speed_turn, false, differential, throttleDirection); //LEFT
     }
     else
     {
-        steer(speed_turn, 1, differential); //RIGHT
+        steer(speed_turn, true, differential, throttleDirection); //RIGHT
     }
 }
