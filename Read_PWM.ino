@@ -4,6 +4,13 @@ volatile uint32_t risingEdge1[12];
 volatile uint32_t risingEdge2[6];
 volatile uint32_t uSec[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int dict_channel[6] = {0, 2, 5, 6, 10, 11};
+int throttle = 0;
+int steering = 0;
+int readingtoSend = 0;
+int armExtention = 0;
+int gapper = 0;
+int differential = 0;
+int speed_turn = 0;
 
 //For pin PCINT0  PCINT4 PCINT5 or 8 12 13
 ISR(PCINT0_vect)
@@ -83,13 +90,46 @@ void setup()
     sei();
 }
 
+int zeroError(int reading)
+{
+    if (-5 < reading && reading < 5)
+    {
+        readingtoSend = 0;
+    }
+    else
+    {
+        readingtoSend = reading;
+    }
+    return readingtoSend;
+}
+
 void loop()
 {
-    Serial.flush(); //Check for outgoing signal
-    for (int index = 0; index < 6; index++)
+    // Serial.flush(); //Check for outgoing signal
+    // for (int index = 0; index < 6; index++)
+    // {
+    //     Serial.print(uSec[dict_channel[index]]);
+    //     Serial.print("\t");
+    // }
+    // Serial.println();
+    steering = map(uSec[dict_channel[0]], 1072, 1856, -255, 255);
+    throttle = map(uSec[dict_channel[1]], 1110, 1752, -255, 255);
+    steering = zeroError(steering);
+    throttle = zeroError(throttle);
+    Serial.print(String(throttle));
+    Serial.print("\t");
+    Serial.println(String(steering));
+    armExtention = map(uSec[dict_channel[2]], 1144, 1782, 0, 100);
+    Serial.print("armExtention \t");
+    Serial.println(armExtention);
+    if (uSec[dict_channel[3]] > 1060 && uSec[dict_channel[3]] < 1410)
     {
-        Serial.print(uSec[dict_channel[index]]);
-        Serial.print("\t");
+        Serial.println("Gripper OPEN");
     }
-    Serial.println();
+    if (uSec[dict_channel[3]] > 1440 && uSec[dict_channel[3]] < 1850)
+    {
+        Serial.println("Gripper CLOSED");
+    }
+    differential = map(uSec[dict_channel[4]], 1000, 2010, 10, 50);
+    speed_turn = map(uSec[dict_channel[5]], 1000, 2010, 10, 50);
 }
