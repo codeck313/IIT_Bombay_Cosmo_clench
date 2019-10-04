@@ -9,8 +9,16 @@ int steering = 0;
 int readingtoSend = 0;
 int armExtention = 0;
 int gapper = 0;
-int differential = 0;
+float differential = 0;
 int speed_turn = 0;
+
+//Pin map
+int ePinL = 0; //PWM
+int ePinR = 0; //PWM
+int motorPinL1 = 0;
+int motorPinL2 = 0;
+int motorPinR1 = 0;
+int motorPinR2 = 0;
 
 //For pin PCINT0  PCINT4 PCINT5 or 8 12 13
 ISR(PCINT0_vect)
@@ -72,7 +80,14 @@ void setup()
     pinMode(8, INPUT);
     pinMode(12, INPUT);
     pinMode(13, INPUT);
-    pinMode(9, OUTPUT);
+
+    pinMode(ePinL, OUTPUT);
+    pinMode(ePinR, OUTPUT);
+    pinMode(motorPinL1, OUTPUT);
+    pinMode(motorPinL2, OUTPUT);
+    pinMode(motorPinR1, OUTPUT);
+    pinMode(motorPinR2, OUTPUT);
+
     cli();
     PCMSK2 |= (1 << PCINT18);
     PCMSK2 |= (1 << PCINT20);
@@ -103,6 +118,11 @@ int zeroError(int reading)
     return readingtoSend;
 }
 
+//Amount -> Value between 0-255 | Direction -> 1 for right and 0 for left
+//Bias -> Percentage reading of amount by which other motor function
+void steer(int amount, int direction, float bias)
+{
+}
 void loop()
 {
     // Serial.flush(); //Check for outgoing signal
@@ -131,5 +151,27 @@ void loop()
         Serial.println("Gripper CLOSED");
     }
     differential = map(uSec[dict_channel[4]], 1000, 2010, 10, 50);
-    speed_turn = map(uSec[dict_channel[5]], 1000, 2010, 10, 50);
+    speed_turn = map(uSec[dict_channel[5]], 1000, 2010, 10, 255);
+
+    //FROM HERE Platform Code***************************************************
+    if ((throttle < 0) && steering == 0)
+    {
+        //reverse
+        analogWrite(ePinR, abs(throttle));
+        analogWrite(ePinL, abs(throttle));
+    }
+    else
+    {
+        //forward
+        analogWrite(ePinR, throttle);
+        analogWrite(ePinL, throttle);
+    }
+    if (steering < 0)
+    {
+        steer(speed_turn, 0, differential); //LEFT
+    }
+    else
+    {
+        steer(speed_turn, 1, differential); //RIGHT
+    }
 }
