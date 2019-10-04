@@ -17,8 +17,8 @@ int ePinL = 0; //PWM
 int ePinR = 0; //PWM
 int motorPinL1 = 0;
 int motorPinL2 = 0;
-int motorPinR1 = 0;
-int motorPinR2 = 0;
+int motorPinR1 = 0; //NON PWM
+int motorPinR2 = 0; //NON PWM
 
 //For pin PCINT0  PCINT4 PCINT5 or 8 12 13
 ISR(PCINT0_vect)
@@ -74,12 +74,12 @@ void setup()
 {
     Serial.begin(9600);
 
-    pinMode(2, INPUT);
-    pinMode(4, INPUT);
-    pinMode(7, INPUT);
-    pinMode(8, INPUT);
-    pinMode(12, INPUT);
-    pinMode(13, INPUT);
+    pinMode(2, INPUT);  //ch1
+    pinMode(4, INPUT);  //ch2
+    pinMode(7, INPUT);  //ch3
+    pinMode(8, INPUT);  //ch4
+    pinMode(12, INPUT); //ch5
+    pinMode(13, INPUT); //ch6
 
     pinMode(ePinL, OUTPUT);
     pinMode(ePinR, OUTPUT);
